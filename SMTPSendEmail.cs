@@ -1,3 +1,4 @@
+//too many parameters, should encapsulate those parameters into class later.
 public void SendEmail(string server, List<string> to, string from, string pwd, string title, string content, List<Attachment> attachments)
         {
             System.Net.Mail.SmtpClient client = new SmtpClient(server);
