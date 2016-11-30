@@ -204,7 +204,7 @@ int WINAPI WinMain(HINSTANCE hInstance,
 
 	/*initDirectSound(hWnd, 48000, 48000 * sizeof(int) * 2);*/
 
-	UINT32 runningSampleIndex = 0;
+	//UINT32 runningSampleIndex = 0;
 	//int samplesPerSecond = 48000;
 	//int squareWaveCounter = 0;
 	//int Tonehz = 256;
@@ -233,80 +233,35 @@ int WINAPI WinMain(HINSTANCE hInstance,
 			if (msg.message == WM_QUIT) {
 				isRunning = false;
 			}
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+		void *region1;
+		DWORD regionSize1;
+		void *region2;
+		DWORD regionSize2;
 
-			switch (msg.message) {
-			case WM_SYSKEYDOWN:
-			case WM_SYSKEYUP:
-			case WM_KEYDOWN:
-			case WM_KEYUP: {
-				int VKCode = (int)msg.wParam;
+		DWORD playCursor;
+		DWORD writeCursor;
 
-				// NOTE: Since we are comparing WasDown to IsDown,
-				// we MUST use == or != to convert these bit tests to actual
-				// 0 or 1 values.
-				bool WasDown = ((msg.lParam & (1 << 30)) != 0);
-				bool IsDown = ((msg.lParam & (1 << 31)) == 0);
-				if (WasDown != IsDown) {
-					{
-						WPARAM wParam = msg.wParam;
-						if (wParam == 'A')
-						{
-							xoffset -= 5;
-						}
-						else if (wParam == 'D')
-						{
-							xoffset += 5;
-						}
-						else if (wParam == 'W')
-						{
-							yoffset += 5;
-						}
-						else if (wParam == 'S')
-						{
-							yoffset -= 5;
-						}
-					}
-				}
+
+		if (SUCCEEDED(secondaryBuffer->GetCurrentPosition(&playCursor, &writeCursor))) {
+
+			DWORD byteToLock = (SoundOutput.RunningSampleIndex *
+				SoundOutput.BytesPerSample) % SoundOutput.SecondaryBufferSize;
+			DWORD byteToWrite;
+			if (byteToLock == playCursor) {
+				byteToWrite = 0;
 			}
-						   break;
-			default: {
-				TranslateMessage(&msg);
-				DispatchMessage(&msg);
+			else if (byteToLock > playCursor) {
+				byteToWrite = (SoundOutput.SecondaryBufferSize - byteToLock);
+				byteToWrite += playCursor;
 			}
+			else {
+				byteToWrite = playCursor - byteToLock;
 			}
-
-
-			void *region1;
-			DWORD regionSize1;
-			void *region2;
-			DWORD regionSize2;
-
-			DWORD playCursor;
-			DWORD writeCursor;
-
-
-			if (SUCCEEDED(secondaryBuffer->GetCurrentPosition(&playCursor, &writeCursor))) {
-
-				DWORD byteToLock = (SoundOutput.RunningSampleIndex &
-					SoundOutput.BytesPerSample) % SoundOutput.SecondaryBufferSize;
-				DWORD byteToWrite;
-				if (byteToLock == playCursor) {
-					byteToWrite = 0;
-				}
-				else if (byteToLock > playCursor) {
-					byteToWrite = (SoundOutput.SecondaryBufferSize - byteToLock);
-					byteToWrite += playCursor;
-				}
-				else {
-					byteToWrite = playCursor - byteToLock;
-				}
-				//DWORD writePointer = ;
-				Win32FillSoundBuffer(&SoundOutput, byteToLock, byteToWrite);
-			}
-			/*if (!SoundIsPlaying) {
-				secondaryBuffer->Play(0, 0, DSBPLAY_LOOPING);
-				SoundIsPlaying = true;
-			}*/
+			//DWORD writePointer = ;
+			Win32FillSoundBuffer(&SoundOutput, byteToLock, byteToWrite);
 		}
 
 	}
